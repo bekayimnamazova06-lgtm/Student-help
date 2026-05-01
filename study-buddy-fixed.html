@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Study Buddy</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161921;
+    --surface2: #1e2230;
+    --border: #2a2f42;
+    --accent: #7c6af7;
+    --accent2: #f7c26a;
+    --accent3: #6af7b8;
+    --text: #e8eaf2;
+    --muted: #7a7f9a;
+    --danger: #f76a6a;
+    --radius: 14px;
+    --shadow: 0 8px 40px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,247,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,247,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glow-orb.one { width: 500px; height: 500px; background: rgba(124,106,247,0.12); top: -100px; left: -100px; }
+  .glow-orb.two { width: 400px; height: 400px; background: rgba(106,247,184,0.07); bottom: -80px; right: -80px; }
+
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 2rem 2rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.35);
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .logo-text span { color: var(--accent); }
+
+  .badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 99px;
+    background: rgba(124,106,247,0.15);
+    border: 1px solid rgba(124,106,247,0.3);
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .container {
+    position: relative;
+    z-index: 5;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 3rem 0 2.5rem;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+  }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero p {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* Input area */
+  .input-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .input-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.97rem;
+    line-height: 1.6;
+    padding: 1rem;
+    resize: vertical;
+    min-height: 130px;
+    transition: border-color 0.2s;
+    outline: none;
+  }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--muted); }
+
+  .row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; align-items: center; }
+
+  .chips { display: flex; gap: 0.5rem; flex-wrap: wrap; flex: 1; }
+  .chip {
+    font-size: 0.75rem;
+    padding: 5px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(124,106,247,0.08); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #6a4ff7);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(124,106,247,0.35);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(124,106,247,0.5); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Loader */
+  .loader-wrap {
+    text-align: center;
+    padding: 3rem 0;
+    display: none;
+  }
+  .loader-wrap.active { display: block; }
+  .spinner {
+    width: 42px; height: 42px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { color: var(--muted); font-size: 0.9rem; }
+  .loader-stages { display: flex; justify-content: center; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .stage-dot {
+    font-size: 0.75rem; color: var(--muted);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .stage-dot .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+  .stage-dot.done .dot { background: var(--accent3); }
+  .stage-dot.active .dot { background: var(--accent); animation: pulse 0.8s ease infinite alternate; }
+  @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
+
+  /* Result */
+  #result { display: none; }
+  #result.visible { display: block; animation: fadeUp 0.5s ease; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .section-card:hover { border-color: rgba(124,106,247,0.3); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .section-icon {
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    flex: 1;
+  }
+  .section-toggle {
+    color: var(--muted);
+    font-size: 0.8rem;
+    transition: transform 0.25s;
+  }
+  .section-card.open .section-toggle { transform: rotate(180deg); }
+
+  .section-body {
+    padding: 0 1.25rem 1.25rem;
+    font-size: 0.93rem;
+    line-height: 1.75;
+    color: #c8cbdb;
+    display: none;
+  }
+  .section-card.open .section-body { display: block; }
+
+  /* Content styling */
+  .section-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--accent2);
+    margin: 1rem 0 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .section-body p { margin-bottom: 0.6rem; }
+  .section-body ul { padding-left: 1.25rem; margin-bottom: 0.6rem; }
+  .section-body ul li { margin-bottom: 0.3rem; }
+  .section-body ol { padding-left: 1.25rem; margin-bottom: 0.6rem; }
+  .section-body ol li { margin-bottom: 0.4rem; }
+  .section-body strong { color: var(--text); font-weight: 600; }
+  .section-body em { color: var(--accent3); font-style: italic; }
+  .section-body code {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 0.85em;
+    font-family: 'Courier New', monospace;
+    color: var(--accent2);
+  }
+  .section-body blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 1rem;
+    color: var(--muted);
+    margin: 0.75rem 0;
+    font-style: italic;
+  }
+
+  /* Quiz styling */
+  .quiz-q {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .quiz-q .qnum {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .quiz-q .qtext { font-weight: 500; color: var(--text); margin-bottom: 0.6rem; }
+  .quiz-q .options { display: flex; flex-direction: column; gap: 0.35rem; }
+  .quiz-q .option {
+    font-size: 0.87rem;
+    padding: 6px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .quiz-q .option:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-q .option.correct { border-color: var(--accent3); background: rgba(106,247,184,0.08); color: var(--accent3); }
+  .quiz-q .option.wrong { border-color: var(--danger); background: rgba(247,106,106,0.08); color: var(--danger); }
+  .short-ans {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.87rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .short-ans:focus { border-color: var(--accent); }
+
+  /* YouTube videos */
+  .yt-card {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.9rem;
+    margin-bottom: 0.6rem;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .yt-card:hover { border-color: #f76a6a; transform: translateX(3px); }
+  .yt-icon {
+    width: 38px; height: 38px;
+    background: #f76a6a;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .yt-title { font-weight: 600; font-size: 0.88rem; color: var(--text); margin-bottom: 0.25rem; }
+  .yt-why { font-size: 0.78rem; color: var(--muted); }
+  .yt-link { font-size: 0.72rem; color: #f76a6a; margin-top: 0.3rem; display: block; word-break: break-all; }
+
+  /* Mistake card */
+  .mistake-item {
+    display: flex; gap: 0.6rem; align-items: flex-start;
+    margin-bottom: 0.5rem;
+  }
+  .mistake-icon { color: var(--danger); flex-shrink: 0; margin-top: 2px; }
+
+  /* Study tip */
+  .tip-box {
+    background: linear-gradient(135deg, rgba(124,106,247,0.12), rgba(106,247,184,0.08));
+    border: 1px solid rgba(124,106,247,0.25);
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex; gap: 0.75rem; align-items: flex-start;
+  }
+  .tip-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+  /* Color accents per section */
+  .si-1 { background: rgba(124,106,247,0.15); }
+  .si-2 { background: rgba(106,247,184,0.12); }
+  .si-3 { background: rgba(247,194,106,0.12); }
+  .si-4 { background: rgba(106,194,247,0.12); }
+  .si-5 { background: rgba(247,106,184,0.12); }
+  .si-6 { background: rgba(247,106,106,0.12); }
+  .si-7 { background: rgba(247,247,106,0.12); }
+  .si-8 { background: rgba(194,106,247,0.12); }
+
+  /* Share/export bar */
+  .action-bar {
+    display: flex;
+    gap: 0.6rem;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .error-box {
+    background: rgba(247,106,106,0.1);
+    border: 1px solid rgba(247,106,106,0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    color: var(--danger);
+    font-size: 0.88rem;
+    display: none;
+    margin-bottom: 1rem;
+  }
+  .error-box.show { display: block; }
+
+  footer {
+    position: relative; z-index: 5;
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--muted);
+    font-size: 0.78rem;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 600px) {
+    .chips { display: none; }
+    .hero h1 { font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb one"></div>
+<div class="glow-orb two"></div>
+
+<header>
+  <div class="logo-icon">🎓</div>
+  <div class="logo-text">Study<span>Buddy</span> AI</div>
+  <div class="badge">Powered by Claude</div>
+</header>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>Learn <em>Anything</em><br/>Deeply & Fast</h1>
+    <p>Type any topic or paste your study material. I'll break it down, explain it clearly, quiz you, and find YouTube resources.</p>
+  </div>
+
+  <div class="input-card">
+    <label class="input-label">📝 Enter topic or paste study material</label>
+    <textarea id="topicInput" placeholder="e.g. Photosynthesis, Newton's Laws of Motion, World War II causes, Machine Learning, Mitosis vs Meiosis..."></textarea>
+    <div class="row">
+      <div class="chips">
+        <div class="chip" onclick="setTopic('Photosynthesis')">🌿 Photosynthesis</div>
+        <div class="chip" onclick="setTopic('Newton\'s Laws of Motion')">🍎 Newton's Laws</div>
+        <div class="chip" onclick="setTopic('Machine Learning basics')">🤖 Machine Learning</div>
+        <div class="chip" onclick="setTopic('DNA replication')">🧬 DNA Replication</div>
+        <div class="chip" onclick="setTopic('World War 2 causes')">🌍 WW2 Causes</div>
+        <div class="chip" onclick="setTopic('The Water Cycle')">💧 Water Cycle</div>
+      </div>
+      <button class="btn btn-primary" id="studyBtn" onclick="startStudy()">
+        <span>✨</span> Explain This!
+      </button>
+    </div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="loader-wrap" id="loader">
+    <div class="spinner"></div>
+    <div class="loader-text" id="loaderText">Analyzing your topic…</div>
+    <div class="loader-stages">
+      <div class="stage-dot active" id="s1"><div class="dot"></div>Understanding</div>
+      <div class="stage-dot" id="s2"><div class="dot"></div>Explaining</div>
+      <div class="stage-dot" id="s3"><div class="dot"></div>Creating Quiz</div>
+      <div class="stage-dot" id="s4"><div class="dot"></div>Finding Videos</div>
+    </div>
+  </div>
+
+  <div id="result"></div>
+
+</div>
+
+<footer>
+  StudyBuddy AI — Built for students everywhere 📚 &nbsp;·&nbsp; Powered by Claude (Anthropic)
+</footer>
+
+<script>
+const SECTIONS = [
+  { id: 'explanation',  icon: '📖', title: '1. Clear Explanation',       color: 'si-1' },
+  { id: 'simple',       icon: '💡', title: '2. Super Simple Version',    color: 'si-2' },
+  { id: 'examples',     icon: '🌍', title: '3. Real-Life Examples',      color: 'si-3' },
+  { id: 'keypoints',    icon: '📌', title: '4. Key Points',              color: 'si-4' },
+  { id: 'quiz',         icon: '❓', title: '5. Quiz Yourself',           color: 'si-5' },
+  { id: 'mistakes',     icon: '⚠️',  title: '6. Common Mistakes',        color: 'si-6' },
+  { id: 'tip',          icon: '🧠', title: '7. Study Tip',               color: 'si-7' },
+  { id: 'videos',       icon: '▶️',  title: '8. YouTube Resources',      color: 'si-8' },
+];
+
+function setTopic(t) {
+  document.getElementById('topicInput').value = t;
+  document.getElementById('topicInput').focus();
+}
+
+function setStage(n) {
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('s' + i);
+    el.classList.remove('active', 'done');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  }
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.textContent = '⚠️ ' + msg;
+  box.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('errorBox').classList.remove('show');
+}
+
+async function startStudy() {
+  const topic = document.getElementById('topicInput').value.trim();
+  if (!topic) {
+    showError('Please enter a topic or paste some study material first.');
+    return;
+  }
+  hideError();
+
+  const btn = document.getElementById('studyBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⏳</span> Working…';
+
+  document.getElementById('result').classList.remove('visible');
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('loader').classList.add('active');
+
+  setStage(1);
+  const stages = [
+    { delay: 800,  stage: 2, text: 'Building your explanation…' },
+    { delay: 2500, stage: 3, text: 'Creating quiz questions…' },
+    { delay: 4500, stage: 4, text: 'Searching for YouTube videos…' },
+  ];
+  stages.forEach(s => setTimeout(() => {
+    setStage(s.stage);
+    document.getElementById('loaderText').textContent = s.text;
+  }, s.delay));
+
+  const prompt = buildPrompt(topic);
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        system: `You are an expert AI Study Buddy. Return ONLY valid JSON matching exactly this structure. No markdown fences, no extra text. All values must be strings or arrays of strings/objects.
+
+{
+  "topic": "string - detected topic name",
+  "explanation": "string - clear step-by-step HTML explanation using <p>, <ul>, <li>, <ol>, <strong>, <em>, <h3> tags",
+  "simple": "string - 2-3 sentence beginner-friendly explanation as HTML",
+  "examples": ["string HTML for example 1", "string HTML for example 2", "string HTML for example 3"],
+  "keypoints": ["key point 1", "key point 2", "key point 3", "key point 4", "key point 5"],
+  "quiz": [
+    {"type":"mc","question":"Question text","options":["A) ...","B) ...","C) ...","D) ..."],"answer":"A"},
+    {"type":"mc","question":"Question text","options":["A) ...","B) ...","C) ...","D) ..."],"answer":"B"},
+    {"type":"short","question":"Short answer question?"},
+    {"type":"mc","question":"Question text","options":["A) ...","B) ...","C) ...","D) ..."],"answer":"C"},
+    {"type":"short","question":"Another short answer question?"}
+  ],
+  "mistakes": ["common mistake 1", "common mistake 2", "common mistake 3", "common mistake 4"],
+  "tip": "string - one practical memory/study tip",
+  "videos": [
+    {"title":"Video Title 1","why":"Why it is useful (1 sentence)","query":"YouTube search query 1"},
+    {"title":"Video Title 2","why":"Why it is useful (1 sentence)","query":"YouTube search query 2"},
+    {"title":"Video Title 3","why":"Why it is useful (1 sentence)","query":"YouTube search query 3"}
+  ]
+}`,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message || 'API error');
+
+    const raw = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    document.getElementById('loader').classList.remove('active');
+    renderResult(parsed);
+
+  } catch (err) {
+    document.getElementById('loader').classList.remove('active');
+    showError('Something went wrong: ' + err.message + '. Please try again.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>✨</span> Explain This!';
+}
+
+function buildPrompt(topic) {
+  return `Please explain the following topic deeply and thoroughly as a Study Buddy:
+
+TOPIC / MATERIAL:
+"""
+${topic}
+"""
+
+Instructions:
+- Detect if this is a specific topic name or pasted study text
+- Provide a comprehensive, student-friendly explanation
+- If complex, break into subtopics in the explanation
+- Make quiz questions genuinely educational
+- For YouTube videos, suggest real search queries that a student would use to find good beginner-friendly content
+- Return ONLY the JSON structure as specified in the system prompt`;
+}
+
+function renderResult(data) {
+  const container = document.getElementById('result');
+
+  let html = `
+  <div class="action-bar">
+    <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+    <button class="btn btn-secondary" onclick="copyAll(this)">📋 Copy All</button>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem;">
+    <span style="font-size:1.8rem">🎯</span>
+    <div>
+      <div style="font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Topic Detected</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;">${escHtml(data.topic)}</div>
+    </div>
+  </div>`;
+
+  // Section 1 — Explanation
+  html += sectionCard(SECTIONS[0], `<div>${data.explanation}</div>`);
+
+  // Section 2 — Simple
+  html += sectionCard(SECTIONS[1], `<div style="font-size:1.05rem;line-height:1.8;color:var(--accent3)">${data.simple}</div>`);
+
+  // Section 3 — Examples
+  let exHtml = '';
+  (data.examples || []).forEach((ex, i) => {
+    exHtml += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.9rem;margin-bottom:.6rem;">
+      <div style="font-size:.7rem;font-weight:700;color:var(--accent2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.4rem;">Example ${i+1}</div>
+      ${ex}
+    </div>`;
+  });
+  html += sectionCard(SECTIONS[2], exHtml);
+
+  // Section 4 — Key Points
+  let kpHtml = '<ul style="list-style:none;padding:0;">';
+  (data.keypoints || []).forEach(kp => {
+    kpHtml += `<li style="display:flex;gap:.6rem;align-items:flex-start;margin-bottom:.6rem;padding:.7rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
+      <span style="color:var(--accent);flex-shrink:0;">✦</span>
+      <span>${escHtml(kp)}</span>
+    </li>`;
+  });
+  kpHtml += '</ul>';
+  html += sectionCard(SECTIONS[3], kpHtml);
+
+  // Section 5 — Quiz
+  let quizHtml = '';
+  (data.quiz || []).forEach((q, i) => {
+    if (q.type === 'mc') {
+      let opts = (q.options || []).map(o => {
+        const letter = o[0];
+        return `<div class="option" data-letter="${letter}" data-correct="${q.answer}" onclick="answerMC(this)">${escHtml(o)}</div>`;
+      }).join('');
+      quizHtml += `<div class="quiz-q">
+        <div class="qnum">Question ${i+1} · Multiple Choice</div>
+        <div class="qtext">${escHtml(q.question)}</div>
+        <div class="options">${opts}</div>
+      </div>`;
+    } else {
+      quizHtml += `<div class="quiz-q">
+        <div class="qnum">Question ${i+1} · Short Answer</div>
+        <div class="qtext">${escHtml(q.question)}</div>
+        <input class="short-ans" type="text" placeholder="Type your answer here…"/>
+      </div>`;
+    }
+  });
+  html += sectionCard(SECTIONS[4], quizHtml);
+
+  // Section 6 — Mistakes
+  let mistakeHtml = '';
+  (data.mistakes || []).forEach(m => {
+    mistakeHtml += `<div class="mistake-item">
+      <span class="mistake-icon">✗</span>
+      <span>${escHtml(m)}</span>
+    </div>`;
+  });
+  html += sectionCard(SECTIONS[5], mistakeHtml);
+
+  // Section 7 — Tip
+  const tipHtml = `<div class="tip-box">
+    <div class="tip-icon">💡</div>
+    <div>${escHtml(data.tip)}</div>
+  </div>`;
+  html += sectionCard(SECTIONS[6], tipHtml);
+
+  // Section 8 — YouTube Videos
+  let ytHtml = `<p style="color:var(--muted);font-size:.82rem;margin-bottom:.75rem;">🔍 Click to search on YouTube — these are curated queries for beginner-friendly content.</p>`;
+  (data.videos || []).forEach(v => {
+    const ytUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(v.query)}`;
+    ytHtml += `<a class="yt-card" href="${ytUrl}" target="_blank" rel="noopener">
+      <div class="yt-icon">▶</div>
+      <div>
+        <div class="yt-title">${escHtml(v.title)}</div>
+        <div class="yt-why">${escHtml(v.why)}</div>
+        <span class="yt-link">🔍 ${escHtml(v.query)}</span>
+      </div>
+    </a>`;
+  });
+  html += sectionCard(SECTIONS[7], ytHtml);
+
+  container.innerHTML = html;
+  container.className = 'visible';
+  container.style.display = 'block';
+
+  // Open first section by default
+  const firstCard = container.querySelector('.section-card');
+  if (firstCard) toggleSection(firstCard);
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function sectionCard(sec, bodyHtml) {
+  return `<div class="section-card">
+    <div class="section-header" onclick="toggleSection(this.closest('.section-card'))">
+      <div class="section-icon ${sec.color}">${sec.icon}</div>
+      <div class="section-title">${sec.title}</div>
+      <div class="section-toggle">▼</div>
+    </div>
+    <div class="section-body">${bodyHtml}</div>
+  </div>`;
+}
+
+function toggleSection(card) {
+  card.classList.toggle('open');
+}
+
+function answerMC(el) {
+  const correct = el.dataset.correct;
+  const letter = el.dataset.letter;
+  const parent = el.closest('.options');
+  parent.querySelectorAll('.option').forEach(o => {
+    o.onclick = null;
+    if (o.dataset.letter === correct) o.classList.add('correct');
+    else if (o === el && letter !== correct) o.classList.add('wrong');
+  });
+}
+
+function escHtml(str) {
+  if (typeof str !== 'string') return String(str || '');
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function copyAll(btn) {
+  const text = document.getElementById('result').innerText;
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy All', 1500);
+  } catch(e) { alert('Copy failed. Please copy manually.'); }
+}
+
+// Allow Enter (Ctrl+Enter) to submit
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('topicInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) startStudy();
+  });
+});
+</script>
+</body>
+</html>
